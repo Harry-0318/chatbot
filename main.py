@@ -1,6 +1,6 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from fastapi.staticfiles import StaticFiles
@@ -21,10 +21,6 @@ class ChatRequest(BaseModel):
     session_id: str
     messages: List[Message]
 
-
-class Question(BaseModel):
-    message: str
-
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -41,13 +37,18 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 
 app = FastAPI()
 
-templates = Jinja2Templates(directory="templates")
-app.mount("/static", StaticFiles(directory="static"), name="static")
-@app.get("/", response_class=HTMLResponse)
-def read_root(request: Request):
-    logger.info("Root endpoint accessed.")
-    return templates.TemplateResponse("index.html", {"request": request, "message": "Hello from FastAPI!"})
+# Create directories if they don't exist
+os.makedirs("static", exist_ok=True)
+os.makedirs("templates", exist_ok=True)
 
+# Mount static files
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+@app.get("/", response_class=HTMLResponse)
+def read_root():
+    logger.info("Root endpoint accessed.")
+    # Serve the HTML file directly since it's not in templates folder
+    return FileResponse("index.html")
 
 # Enable CORS for frontend integration
 app.add_middleware(
@@ -59,44 +60,75 @@ app.add_middleware(
 )
 
 # Initialize the agent once at startup
-agent = initialize_smart_agent()
-logger.info("Smart agent initialized successfully.")
-
-# Request model
+try:
+    agent = initialize_smart_agent()
+    logger.info("Smart agent initialized successfully.")
+except Exception as e:
+    logger.error(f"Failed to initialize agent: {e}")
+    agent = None
 
 @app.post("/chat")
 async def chat(chat_request: ChatRequest):
+    if not agent:
+        raise HTTPException(status_code=500, detail="Agent not initialized")
+    
     session_id = chat_request.session_id
     messages = chat_request.messages
 
-    conversation_text = "\n".join(f"{m.role}: {m.content}" for m in messages)
-    answer = run_smart_agent(agent, conversation_text)
+    if not messages:
+        raise HTTPException(status_code=400, detail="No messages provided")
 
-    # Save last user message and assistant reply
-    save_to_db(session_id, "user", messages[-1].content)
-    save_to_db(session_id, "assistant", answer)
+    try:
+        conversation_text = "\n".join(f"{m.role}: {m.content}" for m in messages)
+        answer = run_smart_agent(agent, conversation_text)
 
-    return {"answer": answer}
+        # Save to database with error handling
+        try:
+            save_to_db(session_id, "user", messages[-1].content)
+            save_to_db(session_id, "assistant", answer)
+        except Exception as db_error:
+            logger.error(f"Database error: {db_error}")
+            # Continue even if DB save fails
+
+        return {"answer": answer}
+    
+    except Exception as e:
+        logger.error(f"Chat error: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 def save_to_db(session_id: str, role: str, content: str):
-    conn = psycopg2.connect(DATABASE_URL)
-    cur = conn.cursor()
-    cur.execute(
-        "INSERT INTO messages (session_id, role, content) VALUES (%s, %s, %s)",
-        (session_id, role, content)
-    )
-    conn.commit()
-    cur.close()
-    conn.close()
+    try:
+        conn = psycopg2.connect(DATABASE_URL)
+        cur = conn.cursor()
+        cur.execute(
+            "INSERT INTO messages (session_id, role, content) VALUES (%s, %s, %s)",
+            (session_id, role, content)
+        )
+        conn.commit()
+    except Exception as e:
+        logger.error(f"Database save error: {e}")
+        raise
+    finally:
+        if 'cur' in locals():
+            cur.close()
+        if 'conn' in locals():
+            conn.close()
+
 def get_conversation_history(session_id: str) -> List[Dict[str, str]]:
-    conn = psycopg2.connect(DATABASE_URL)
-    cur = conn.cursor()
-    cur.execute(
-        "SELECT role, content FROM messages WHERE session_id = %s ORDER BY id",
-        (session_id,)
-    )
-    rows = cur.fetchall()
-    cur.close()
-    conn.close()
-    
-    return [{"role": row[0], "content": row[1]} for row in rows]
+    try:
+        conn = psycopg2.connect(DATABASE_URL)
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT role, content FROM messages WHERE session_id = %s ORDER BY id",
+            (session_id,)
+        )
+        rows = cur.fetchall()
+        return [{"role": row[0], "content": row[1]} for row in rows]
+    except Exception as e:
+        logger.error(f"Database fetch error: {e}")
+        return []
+    finally:
+        if 'cur' in locals():
+            cur.close()
+        if 'conn' in locals():
+            conn.close()

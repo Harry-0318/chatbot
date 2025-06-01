@@ -358,3 +358,25 @@ user: Tell me a joke
 2025-06-01 11:41:39,002 — INFO — HTTP Request: POST http://127.0.0.1:11434/api/generate "HTTP/1.1 200 OK"
 2025-06-01 11:41:41,656 — INFO — Agent response: Sure! Here's one: Why don't scientists trust atoms? Because they make up everything... except for the periodic table! (It's chemistry humor, sorry if it didn't bring laughter immediately!)
 2025-06-01 11:41:41,684 — INFO — User message and bot reply saved to database.
+2025-06-01 12:27:15,817 — INFO — Initializing Ollama LLM with model: mistral
+2025-06-01 12:27:15,826 — INFO — Defining general-purpose tool...
+2025-06-01 12:27:15,826 — INFO — Initializing agent...
+2025-06-01 12:27:15,827 — INFO — Smart agent initialized successfully.
+2025-06-01 12:27:18,054 — INFO — Root endpoint accessed.
+2025-06-01 12:27:28,506 — INFO — Running agent with user input: user: What is the biggest planet in solar system
+2025-06-01 12:27:32,057 — INFO — HTTP Request: POST http://127.0.0.1:11434/api/generate "HTTP/1.1 200 OK"
+2025-06-01 12:27:35,368 — INFO — HTTP Request: POST http://127.0.0.1:11434/api/generate "HTTP/1.1 200 OK"
+2025-06-01 12:27:38,060 — INFO — HTTP Request: POST http://127.0.0.1:11434/api/generate "HTTP/1.1 200 OK"
+2025-06-01 12:27:40,858 — INFO — HTTP Request: POST http://127.0.0.1:11434/api/generate "HTTP/1.1 200 OK"
+2025-06-01 12:27:43,746 — INFO — HTTP Request: POST http://127.0.0.1:11434/api/generate "HTTP/1.1 200 OK"
+2025-06-01 12:27:46,580 — INFO — HTTP Request: POST http://127.0.0.1:11434/api/generate "HTTP/1.1 200 OK"
+2025-06-01 12:27:49,316 — INFO — HTTP Request: POST http://127.0.0.1:11434/api/generate "HTTP/1.1 200 OK"
+2025-06-01 12:27:52,077 — INFO — HTTP Request: POST http://127.0.0.1:11434/api/generate "HTTP/1.1 200 OK"
+2025-06-01 12:27:54,950 — INFO — HTTP Request: POST http://127.0.0.1:11434/api/generate "HTTP/1.1 200 OK"
+2025-06-01 12:27:57,825 — INFO — HTTP Request: POST http://127.0.0.1:11434/api/generate "HTTP/1.1 200 OK"
+2025-06-01 12:28:00,733 — INFO — HTTP Request: POST http://127.0.0.1:11434/api/generate "HTTP/1.1 200 OK"
+2025-06-01 12:28:03,657 — INFO — HTTP Request: POST http://127.0.0.1:11434/api/generate "HTTP/1.1 200 OK"
+2025-06-01 12:28:09,574 — INFO — HTTP Request: POST http://127.0.0.1:11434/api/generate "HTTP/1.1 200 OK"
+2025-06-01 12:28:15,470 — INFO — HTTP Request: POST http://127.0.0.1:11434/api/generate "HTTP/1.1 200 OK"
+2025-06-01 12:28:21,495 — INFO — HTTP Request: POST http://127.0.0.1:11434/api/generate "HTTP/1.1 200 OK"
+2025-06-01 12:28:26,960 — INFO — Agent response: Agent stopped due to iteration limit or time limit.
