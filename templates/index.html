@@ -113,7 +113,13 @@
     const response = await fetch("http://localhost:8000/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: userMessage })
+      body: JSON.stringify({
+    messages: [
+      { role: "user", content: "Hello" },
+      { role: "assistant", content: "Hi there!" },
+      { role: "user", content: "Tell me a joke" }
+    ]
+  })
     });
 
     const data = await response.json();

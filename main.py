@@ -9,6 +9,14 @@ import psycopg2
 import os
 from dotenv import load_dotenv
 import logging
+from typing import List, Dict
+
+class Message(BaseModel):
+    role: str  # 'user' or 'assistant'
+    content: str
+
+class ChatRequest(BaseModel):
+    messages: List[Message]
 
 # Configure logging
 logging.basicConfig(
@@ -52,14 +60,25 @@ class Question(BaseModel):
     message: str
 
 @app.post("/chat")
-async def chat(question: Question):
+async def chat(chat_request: ChatRequest):
     try:
-        answer = run_smart_agent(agent, question.message)
-        # Save user message and bot reply to DB
-        save_to_db(question.message, answer)
+        # Prepare the history content as one input string or structured prompt as your agent expects
+        conversation_text = "\n".join(
+            f"{msg.role}: {msg.content}" for msg in chat_request.messages
+        )
+        # Run agent with full conversation history
+        answer = run_smart_agent(agent, conversation_text)
+
+        # Append bot reply to conversation history (could also return full updated history)
+        # Here, save only latest user message and bot reply to DB or optionally the whole history
+
+        last_user_message = [m.content for m in chat_request.messages if m.role == "user"][-1]
+        save_to_db(last_user_message, answer)
+
         logger.info("User message and bot reply saved to database.")
         return {"answer": answer}
     except Exception as e:
+        logger.error(f"Error in chat endpoint: {str(e)}")
         return {"answer": f"An error occurred: {str(e)}"}
 
 def save_to_db(user_message: str, bot_reply: str):

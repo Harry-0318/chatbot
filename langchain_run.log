@@ -343,3 +343,18 @@ These are some of the major tech news highlights from this week. The trends seem
 2025-06-01 11:26:32,177 — INFO — HTTP Request: POST http://127.0.0.1:11434/api/generate "HTTP/1.1 200 OK"
 2025-06-01 11:26:37,665 — INFO — Agent response: AI: You can ask me anything you'd like! What would you like to know or talk about today?
 2025-06-01 11:26:37,674 — INFO — User message and bot reply saved to database.
+2025-06-01 11:37:56,376 — INFO — Initializing Ollama LLM with model: mistral
+2025-06-01 11:37:56,385 — INFO — Defining general-purpose tool...
+2025-06-01 11:37:56,385 — INFO — Initializing agent...
+2025-06-01 11:37:56,386 — INFO — Smart agent initialized successfully.
+2025-06-01 11:37:59,927 — INFO — Root endpoint accessed.
+2025-06-01 11:41:12,941 — INFO — Root endpoint accessed.
+2025-06-01 11:41:30,424 — INFO — Running agent with user input: user: Hello
+assistant: Hi there!
+user: Tell me a joke
+2025-06-01 11:41:32,921 — INFO — HTTP Request: POST http://127.0.0.1:11434/api/generate "HTTP/1.1 200 OK"
+2025-06-01 11:41:34,995 — INFO — General tool invoked with input: Tell me a joke
+2025-06-01 11:41:35,203 — INFO — HTTP Request: POST http://127.0.0.1:11434/api/generate "HTTP/1.1 200 OK"
+2025-06-01 11:41:39,002 — INFO — HTTP Request: POST http://127.0.0.1:11434/api/generate "HTTP/1.1 200 OK"
+2025-06-01 11:41:41,656 — INFO — Agent response: Sure! Here's one: Why don't scientists trust atoms? Because they make up everything... except for the periodic table! (It's chemistry humor, sorry if it didn't bring laughter immediately!)
+2025-06-01 11:41:41,684 — INFO — User message and bot reply saved to database.
