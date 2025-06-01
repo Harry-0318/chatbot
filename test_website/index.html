@@ -1,0 +1,145 @@
+<html>
+  <head>
+    <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="" />
+    <link
+      rel="stylesheet"
+      as="style"
+      onload="this.rel='stylesheet'"
+      href="https://fonts.googleapis.com/css2?display=swap&amp;family=Noto+Sans%3Awght%40400%3B500%3B700%3B900&amp;family=Plus+Jakarta+Sans%3Awght%40400%3B500%3B700%3B800"
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <title>ChatBot</title>
+    <link rel="icon" type="image/x-icon" href="data:image/x-icon;base64," />
+
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  </head>
+  <body>
+    <div class="relative flex size-full min-h-screen flex-col bg-slate-50 group/design-root overflow-x-hidden" style='font-family: "Plus Jakarta Sans", "Noto Sans", sans-serif;'>
+      <div class="layout-container flex h-full grow flex-col">
+        <header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#e7edf4] px-10 py-3">
+          <div class="flex items-center gap-4 text-[#0d141c]">
+            <div class="size-4">
+              <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path
+                  d="M42.4379 44C42.4379 44 36.0744 33.9038 41.1692 24C46.8624 12.9336 42.2078 4 42.2078 4L7.01134 4C7.01134 4 11.6577 12.932 5.96912 23.9969C0.876273 33.9029 7.27094 44 7.27094 44L42.4379 44Z"
+                  fill="currentColor"
+                ></path>
+              </svg>
+            </div>
+            <h2 class="text-[#0d141c] text-lg font-bold leading-tight tracking-[-0.015em]">Chatbot</h2>
+          </div>
+          <div class="flex flex-1 justify-end gap-8">
+            <div
+              class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10"
+              style='background-image: url("face.png");'
+            ></div>
+          </div>
+        </header>
+        <div id="full_background" class="px-40 flex flex-1 justify-center py-5">
+          <div class="layout-content-container flex flex-col max-w-[960px] flex-1">
+            <!-- Chat Messages -->
+<div id="chat-messages" class="flex flex-col gap-4 p-4 overflow-y-auto flex-1"></div>
+
+<!-- Input Section -->
+<div class="flex items-center px-4 py-3 gap-3 @container">
+  <div
+    class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 shrink-0"
+    style='background-image: url("static/face.png");'
+  ></div>
+  <label class="flex flex-col min-w-40 h-12 flex-1">
+    <div class="flex w-full flex-1 items-stretch rounded-xl h-full">
+      <input
+        id="chat-input"
+        placeholder="Type your message..."
+        class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-[#0d141c] focus:outline-0 focus:ring-0 border-none bg-[#e7edf4] focus:border-none h-full placeholder:text-[#49739c] px-4 rounded-r-none border-r-0 pr-2 text-base font-normal leading-normal"
+        value=""
+      />
+      <div class="flex border-none bg-[#e7edf4] items-center justify-center pr-4 rounded-r-xl border-l-0 !pr-2">
+        <div class="flex items-center gap-4 justify-end">
+          <button id="send-button">
+            <div class="svg-wrapper-1">
+              <div class="svg-wrapper">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  width="24"
+                  height="24"
+                >
+                  <path fill="none" d="M0 0h24v24H0z"></path>
+                  <path
+                    fill="currentColor"
+                    d="M1.946 9.315c-.522-.174-.527-.455.01-.634l19.087-6.362c.529-.176.832.12.684.638l-5.454 19.086c-.15.529-.455.547-.679.045L12 14l6-8-8 6-8.054-2.685z"
+                  ></path>
+                </svg>
+              </div>
+            </div>
+            <span>Send</span>
+          </button>
+          
+        </div>
+      </div>
+    </div>
+  </label>
+</div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+  <script>
+    const input = document.getElementById("chat-input");
+    const sendBtn = document.getElementById("send-button");
+    const chatContainer = document.getElementById("chat-messages");
+  
+    async function sendMessage() {
+  const userMessage = input.value.trim();
+  if (!userMessage) return;
+
+  chatContainer.innerHTML += `
+    <div class="flex items-end gap-3 p-4 justify-end">
+      <div class="flex flex-1 flex-col gap-1 items-end">
+        <p class="text-[#49739c] text-[13px] font-normal leading-normal max-w-[360px] text-right">You</p>
+        <p class="text-base font-normal leading-normal flex max-w-[360px] rounded-xl px-4 py-3 bg-[#248bf3] text-slate-50">${userMessage}</p>
+      </div>
+    </div>
+  `;
+
+  input.value = "";
+
+  chatContainer.scrollTop = chatContainer.scrollHeight;
+
+  try {
+    const response = await fetch("http://localhost:8000/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: userMessage })
+    });
+
+    const data = await response.json();
+    const botReply = data.answer || "Sorry, I didn’t get that.";
+
+    chatContainer.innerHTML += `
+      <div class="flex items-end gap-3 p-4">
+        <div class="flex flex-1 flex-col gap-1 items-start">
+          <p class="text-[#49739c] text-[13px] font-normal leading-normal max-w-[360px]">Bot</p>
+          <p class="text-base font-normal leading-normal flex max-w-[360px] rounded-xl px-4 py-3 bg-[#e7edf4] text-[#0d141c]">${botReply}</p>
+        </div>
+      </div>
+    `;
+
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+  } catch (error) {
+    console.error("Error:", error);
+  }
+}
+
+  
+    sendBtn.addEventListener("click", sendMessage);
+  
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") sendMessage();
+    });
+  </script>
+  
+</html>
