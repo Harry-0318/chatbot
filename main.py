@@ -10,13 +10,20 @@ import os
 from dotenv import load_dotenv
 import logging
 from typing import List, Dict
+import uuid
+
 
 class Message(BaseModel):
-    role: str  # 'user' or 'assistant'
+    role: str
     content: str
 
 class ChatRequest(BaseModel):
+    session_id: str
     messages: List[Message]
+
+
+class Question(BaseModel):
+    message: str
 
 # Configure logging
 logging.basicConfig(
@@ -56,38 +63,40 @@ agent = initialize_smart_agent()
 logger.info("Smart agent initialized successfully.")
 
 # Request model
-class Question(BaseModel):
-    message: str
 
 @app.post("/chat")
 async def chat(chat_request: ChatRequest):
-    try:
-        # Prepare the history content as one input string or structured prompt as your agent expects
-        conversation_text = "\n".join(
-            f"{msg.role}: {msg.content}" for msg in chat_request.messages
-        )
-        # Run agent with full conversation history
-        answer = run_smart_agent(agent, conversation_text)
+    session_id = chat_request.session_id
+    messages = chat_request.messages
 
-        # Append bot reply to conversation history (could also return full updated history)
-        # Here, save only latest user message and bot reply to DB or optionally the whole history
+    conversation_text = "\n".join(f"{m.role}: {m.content}" for m in messages)
+    answer = run_smart_agent(agent, conversation_text)
 
-        last_user_message = [m.content for m in chat_request.messages if m.role == "user"][-1]
-        save_to_db(last_user_message, answer)
+    # Save last user message and assistant reply
+    save_to_db(session_id, "user", messages[-1].content)
+    save_to_db(session_id, "assistant", answer)
 
-        logger.info("User message and bot reply saved to database.")
-        return {"answer": answer}
-    except Exception as e:
-        logger.error(f"Error in chat endpoint: {str(e)}")
-        return {"answer": f"An error occurred: {str(e)}"}
+    return {"answer": answer}
 
-def save_to_db(user_message: str, bot_reply: str):
+def save_to_db(session_id: str, role: str, content: str):
     conn = psycopg2.connect(DATABASE_URL)
     cur = conn.cursor()
     cur.execute(
-        "INSERT INTO messages (user_message, bot_reply) VALUES (%s, %s)",
-        (user_message, bot_reply)
+        "INSERT INTO messages (session_id, role, content) VALUES (%s, %s, %s)",
+        (session_id, role, content)
     )
     conn.commit()
     cur.close()
     conn.close()
+def get_conversation_history(session_id: str) -> List[Dict[str, str]]:
+    conn = psycopg2.connect(DATABASE_URL)
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT role, content FROM messages WHERE session_id = %s ORDER BY id",
+        (session_id,)
+    )
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+    
+    return [{"role": row[0], "content": row[1]} for row in rows]

@@ -88,66 +88,86 @@
     </div>
   </body>
   <script>
+    // Generate a UUID for the session (simple, cryptographically secure)
+    function generateUUID() {
+      return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
+        (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+      );
+    }
+  
     const input = document.getElementById("chat-input");
     const sendBtn = document.getElementById("send-button");
     const chatContainer = document.getElementById("chat-messages");
   
+    // Unique session ID for this user/session
+    const sessionId = generateUUID();
+  
+    // Conversation history array: list of {role, content}
+    const conversation = [];
+  
     async function sendMessage() {
-  const userMessage = input.value.trim();
-  if (!userMessage) return;
-
-  chatContainer.innerHTML += `
-    <div class="flex items-end gap-3 p-4 justify-end">
-      <div class="flex flex-1 flex-col gap-1 items-end">
-        <p class="text-[#49739c] text-[13px] font-normal leading-normal max-w-[360px] text-right">You</p>
-        <p class="text-base font-normal leading-normal flex max-w-[360px] rounded-xl px-4 py-3 bg-[#248bf3] text-slate-50">${userMessage}</p>
-      </div>
-    </div>
-  `;
-
-  input.value = "";
-
-  chatContainer.scrollTop = chatContainer.scrollHeight;
-
-  try {
-    const response = await fetch("http://localhost:8000/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-    messages: [
-      { role: "user", content: "Hello" },
-      { role: "assistant", content: "Hi there!" },
-      { role: "user", content: "Tell me a joke" }
-    ]
-  })
-    });
-
-    const data = await response.json();
-    const botReply = data.answer || "Sorry, I didn’t get that.";
-
-    chatContainer.innerHTML += `
-      <div class="flex items-end gap-3 p-4">
-        <div class="flex flex-1 flex-col gap-1 items-start">
-          <p class="text-[#49739c] text-[13px] font-normal leading-normal max-w-[600px]">Bot</p>
-          <p class="text-base font-normal leading-normal flex w-full max-w-[700px] rounded-xl px-4 py-3 bg-[#e7edf4] text-[#0d141c]">
-            ${botReply}
-          </p>
+      const userMessage = input.value.trim();
+      if (!userMessage) return;
+  
+      // Show user's message in chat UI
+      chatContainer.innerHTML += `
+        <div class="flex items-end gap-3 p-4 justify-end">
+          <div class="flex flex-1 flex-col gap-1 items-end">
+            <p class="text-[#49739c] text-[13px] font-normal leading-normal max-w-[360px] text-right">You</p>
+            <p class="text-base font-normal leading-normal flex max-w-[360px] rounded-xl px-4 py-3 bg-[#248bf3] text-slate-50">${userMessage}</p>
+          </div>
         </div>
-      </div>
-    `;
-
-    chatContainer.scrollTop = chatContainer.scrollHeight;
-  } catch (error) {
-    console.error("Error:", error);
-  }
-}
-
+      `;
   
+      // Add user's message to conversation
+      conversation.push({ role: "user", content: userMessage });
+  
+      // Clear input and scroll chat to bottom
+      input.value = "";
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+  
+      try {
+        // Send full conversation and session ID to backend
+        const response = await fetch("http://localhost:8000/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            session_id: sessionId,
+            messages: conversation,
+          }),
+        });
+  
+        const data = await response.json();
+        const botReply = data.answer || "Sorry, I didn’t get that.";
+  
+        // Show bot's reply in chat UI
+        chatContainer.innerHTML += `
+          <div class="flex items-end gap-3 p-4">
+            <div class="flex flex-1 flex-col gap-1 items-start">
+              <p class="text-[#49739c] text-[13px] font-normal leading-normal max-w-[600px]">Bot</p>
+              <p class="text-base font-normal leading-normal flex w-full max-w-[700px] rounded-xl px-4 py-3 bg-[#e7edf4] text-[#0d141c]">
+                ${botReply}
+              </p>
+            </div>
+          </div>
+        `;
+  
+        // Add bot's reply to conversation history
+        conversation.push({ role: "assistant", content: botReply });
+  
+        // Scroll to bottom
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+  
+      } catch (error) {
+        console.error("Error:", error);
+      }
+    }
+  
+    // Event listeners
     sendBtn.addEventListener("click", sendMessage);
-  
     input.addEventListener("keydown", (e) => {
       if (e.key === "Enter") sendMessage();
     });
   </script>
-  
+    
 </html>
