@@ -48,7 +48,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 def read_root():
     logger.info("Root endpoint accessed.")
     # Serve the HTML file directly since it's not in templates folder
-    return FileResponse("index.html")
+    return FileResponse("templates/index.html")
 
 # Enable CORS for frontend integration
 app.add_middleware(
@@ -79,8 +79,19 @@ async def chat(chat_request: ChatRequest):
         raise HTTPException(status_code=400, detail="No messages provided")
 
     try:
-        conversation_text = "\n".join(f"{m.role}: {m.content}" for m in messages)
-        answer = run_smart_agent(agent, conversation_text)
+        user_message = messages[-1].content.lower().strip()
+        
+        # Handle simple greetings directly
+        simple_greetings = ["hello", "hi", "hey", "good morning", "good afternoon", "good evening"]
+        if user_message in simple_greetings:
+            answer = "Hello! How can I help you today?"
+        else:
+            conversation_text = "\n".join(f"{m.role}: {m.content}" for m in messages)
+            answer = run_smart_agent(agent, conversation_text)
+            
+            # If agent returns empty or problematic response, provide fallback
+            if not answer or "will wait for more questions" in answer.lower():
+                answer = "I'm here to help! Could you please rephrase your question?"
 
         # Save to database with error handling
         try:
@@ -88,14 +99,12 @@ async def chat(chat_request: ChatRequest):
             save_to_db(session_id, "assistant", answer)
         except Exception as db_error:
             logger.error(f"Database error: {db_error}")
-            # Continue even if DB save fails
 
         return {"answer": answer}
     
     except Exception as e:
         logger.error(f"Chat error: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
-
+        return {"answer": "I'm sorry, I encountered an error. Please try again."}
 def save_to_db(session_id: str, role: str, content: str):
     try:
         conn = psycopg2.connect(DATABASE_URL)
@@ -114,21 +123,23 @@ def save_to_db(session_id: str, role: str, content: str):
         if 'conn' in locals():
             conn.close()
 
-def get_conversation_history(session_id: str) -> List[Dict[str, str]]:
-    try:
-        conn = psycopg2.connect(DATABASE_URL)
-        cur = conn.cursor()
-        cur.execute(
-            "SELECT role, content FROM messages WHERE session_id = %s ORDER BY id",
-            (session_id,)
-        )
-        rows = cur.fetchall()
-        return [{"role": row[0], "content": row[1]} for row in rows]
-    except Exception as e:
-        logger.error(f"Database fetch error: {e}")
-        return []
-    finally:
-        if 'cur' in locals():
-            cur.close()
-        if 'conn' in locals():
-            conn.close()
+# def get_conversation_history(session_id: str) -> List[Dict[str, str]]:
+#     try:
+#         conn = psycopg2.connect(DATABASE_URL)
+#         cur = conn.cursor()
+#         cur.execute(
+#             "SELECT role, content FROM messages WHERE session_id = %s ORDER BY id",
+#             (session_id,)
+#         )
+#         rows = cur.fetchall()
+#         return [{"role": row[0], "content": row[1]} for row in rows]
+#     except Exception as e:
+#         logger.error(f"Database fetch error: {e}")
+#         return []
+#     finally:
+#         if 'cur' in locals():
+#             cur.close()
+#         if 'conn' in locals():
+#             conn.close()
+
+
